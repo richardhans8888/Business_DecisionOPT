@@ -5,6 +5,8 @@ import CompareQuartersCharts from "../views/CompareQuartersCharts";
 import Analysis from "../views/Analysis";
 import Strategy from "../views/Strategy";
 import Visuals from "../views/Visuals";
+import History from "../views/History";
+import Export from "../views/Export";
 import type { HistoryItem } from "../views/CompareQuartersCharts";
 import { useAppState } from "../store/AppState";
 
@@ -34,7 +36,9 @@ export default function Layout() {
         {view === "Strategy" && <Strategy />}
         {view === "Visuals" && <Visuals />}
         {view === "Compare Quarters" && <CompareQuartersCharts history={history} />}
-        {view !== "Input Data" && view !== "Compare Quarters" && view !== "Analysis" && view !== "Strategy" && view !== "Visuals" && (
+        {view === "History" && <History />}
+        {view === "Export" && <Export />}
+        {view !== "Input Data" && view !== "Compare Quarters" && view !== "Analysis" && view !== "Strategy" && view !== "Visuals" && view !== "History" && view !== "Export" && (
           <div className="page">Coming soon</div>
         )}
       </div>
