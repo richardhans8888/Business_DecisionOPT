@@ -1,6 +1,6 @@
 import React from "react";
 import { useAppState } from "../store/AppState";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, LineChart, Line } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, LineChart, Line, ComposedChart, ReferenceDot } from "recharts";
 import { MCTheme } from "../theme/chartTheme";
 
 function toMil(v: number) {
@@ -24,89 +24,235 @@ export default function Strategy() {
   };
   const effMean = (eff.Marketing + eff.RnD + eff.Ops) / 3 || 1;
   const efficiencyScale = (v: number) => Math.max(0, Math.min(100, (v / effMean) * 60 + 20)); // center near 60
-  const horizData = [
-    { dept: "Marketing", Allocation: pct[0], Target: efficiencyScale(eff.Marketing) },
-    { dept: "R&D", Allocation: pct[1], Target: efficiencyScale(eff.RnD) },
-    { dept: "Ops", Allocation: pct[2], Target: efficiencyScale(eff.Ops) },
-  ];
   const roiTrend = history.map((h) => {
     const b = Number(h.explain?.budget || 1);
     const rev = Number(h.explain?.avg_revenue || 0);
     return { period: h.periodLabel, ROI: (rev / b) * 100 };
   });
+  const mkPanel = [
+    { name: "Allocation", val: pct[0] || 0, color: MCTheme.colors.marketing },
+    { name: "Efficiency", val: efficiencyScale(eff.Marketing), color: "#cfe3ff" },
+  ];
+  const rdPanel = [
+    { name: "Allocation", val: pct[1] || 0, color: MCTheme.colors.rnd },
+    { name: "Efficiency", val: efficiencyScale(eff.RnD), color: "#cfe3ff" },
+  ];
+  const opPanel = [
+    { name: "Allocation", val: pct[2] || 0, color: MCTheme.colors.ops },
+    { name: "Efficiency", val: efficiencyScale(eff.Ops), color: "#cfe3ff" },
+  ];
+  const gapData = [
+    { dept: "Marketing", ratio: pct[0] || 0, target: efficiencyScale(eff.Marketing), gap: Math.max(0, efficiencyScale(eff.Marketing) - (pct[0] || 0)) },
+    { dept: "R&D", ratio: pct[1] || 0, target: efficiencyScale(eff.RnD), gap: Math.max(0, efficiencyScale(eff.RnD) - (pct[1] || 0)) },
+    { dept: "Ops", ratio: pct[2] || 0, target: efficiencyScale(eff.Ops), gap: Math.max(0, efficiencyScale(eff.Ops) - (pct[2] || 0)) },
+  ];
 
   return (
     <div className="page">
-      <div className="page-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div className="page-title">Strategy</div>
+      <div className="page-inner" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
         <div className="pill"><span className="dot" />Synced</div>
       </div>
-      <div className="report-card">
-        <div className="card-header">
-          <div>Optimal Strategy ({last?.periodLabel || "—"})</div>
-          <div style={{ fontSize: 12, color: "#93c5fd" }}>Constraint: 20–50% per Dept.</div>
+      <div className="mc-hero">
+        <div className="mc-hero-header">
+          <div className="mc-hero-title">Optimal Strategy ({last?.periodLabel || "—"})</div>
+          <div className="mc-hero-sub">Constraint: 20–50% per Dept.</div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16 }}>
-          <div style={{ background: "#0d1638", borderRadius: 12, padding: 16 }}>
+        <div className="mc-hero-grid">
+          <div className="mc-hero-tile">
             <div className="page-subtitle">Marketing</div>
-            <div className="calc-metric">{pct[0].toFixed(0)}%</div>
+            <div className="mc-hero-metric">{pct[0].toFixed(0)}%</div>
           </div>
-          <div style={{ background: "#0d1638", borderRadius: 12, padding: 16 }}>
+          <div className="mc-hero-tile">
             <div className="page-subtitle">R&D</div>
-            <div className="calc-metric">{pct[1].toFixed(0)}%</div>
+            <div className="mc-hero-metric">{pct[1].toFixed(0)}%</div>
           </div>
-          <div style={{ background: "#0d1638", borderRadius: 12, padding: 16 }}>
+          <div className="mc-hero-tile">
             <div className="page-subtitle">Ops</div>
-            <div className="calc-metric">{pct[2].toFixed(0)}%</div>
+            <div className="mc-hero-metric">{pct[2].toFixed(0)}%</div>
           </div>
-          <div style={{ background: "#0d1638", borderRadius: 12, padding: 16 }}>
+          <div className="mc-hero-tile">
             <div className="page-subtitle">Total Expected Growth</div>
-            <div className="calc-metric">{toMil(growth)}</div>
-            <div className="report-sub">Combined Revenue Impact</div>
+            <div className="mc-hero-metric">{toMil(growth)}</div>
+            <div className="mc-hero-sub">Combined Revenue Impact</div>
           </div>
         </div>
       </div>
-      <div className="grid-two" style={{ marginTop: 16 }}>
+      <div className="grid-three">
         <div className="card">
           <div className="card-header">
-            <div>Allocation vs Efficiency Target</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>Horizontal bars with McKinsey palette</div>
+            <div>Marketing Focus</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Allocation vs efficiency target</div>
           </div>
-          <div className="chart-container mc-chart" style={{ height: 360 }}>
+          <div className="chart-container mc-chart" style={{ height: 260 }}>
             <ResponsiveContainer>
-              <BarChart data={horizData} layout="vertical" margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+              <BarChart data={mkPanel} margin={{ top: 16, right: 16, left: 16, bottom: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
-                <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
-                <YAxis type="category" dataKey="dept" />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                 <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
                 <Legend />
-                <Bar dataKey="Allocation" fill={MCTheme.colors.marketing}>
-                  <LabelList dataKey="Allocation" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="right" fill="#0f1f49" />
-                </Bar>
-                <Bar dataKey="Target" fill="#cfe3ff">
-                  <LabelList dataKey="Target" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="right" fill="#0f1f49" />
-                </Bar>
+                {mkPanel.map((e, idx) => (
+                  <Bar key={idx} dataKey="val" fill={e.color} isAnimationActive>
+                    <LabelList dataKey="val" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                  </Bar>
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
         <div className="card">
           <div className="card-header">
-            <div>ROI Trend</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>Latest quarters with dashed average</div>
+            <div>R&D Focus</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Allocation vs efficiency target</div>
           </div>
-          <div className="chart-container mc-chart">
+          <div className="chart-container mc-chart" style={{ height: 260 }}>
             <ResponsiveContainer>
-              <LineChart data={roiTrend} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+              <BarChart data={rdPanel} margin={{ top: 16, right: 16, left: 16, bottom: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
-                <XAxis dataKey="period" />
-                <YAxis tickFormatter={(v) => `${v.toFixed(0)}%`} />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                 <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
                 <Legend />
-                <Line type="monotone" dataKey="ROI" stroke={MCTheme.colors.line} strokeWidth={3} dot={false} />
-              </LineChart>
+                {rdPanel.map((e, idx) => (
+                  <Bar key={idx} dataKey="val" fill={e.color} isAnimationActive>
+                    <LabelList dataKey="val" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                  </Bar>
+                ))}
+              </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+        <div className="card">
+          <div className="card-header">
+            <div>Ops Focus</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Allocation vs efficiency target</div>
+          </div>
+          <div className="chart-container mc-chart" style={{ height: 260 }}>
+            <ResponsiveContainer>
+              <BarChart data={opPanel} margin={{ top: 16, right: 16, left: 16, bottom: 16 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+                <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
+                <Legend />
+                {opPanel.map((e, idx) => (
+                  <Bar key={idx} dataKey="val" fill={e.color} isAnimationActive>
+                    <LabelList dataKey="val" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                  </Bar>
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+      <div className="mc-hero-insight">
+        <div className="mc-insight-header">
+          <div>
+            <div className="mc-insight-title">Diagram Explanations</div>
+            <div className="mc-insight-sub">How to read the three panels</div>
+          </div>
+          <div className="mc-insight-value">
+            <div className="label">PERIOD</div>
+            <div className="num">{last?.periodLabel || "—"}</div>
+          </div>
+        </div>
+        <div className="mc-insight-divider" />
+        <div className="mc-insight-grid">
+          <div>
+            <div className="mc-insight-section-title">Marketing</div>
+            <div className="mc-insight-text">
+              Blue bar shows actual allocation; light-blue bar shows risk-adjusted efficiency target. If allocation <span className="mc-strong">trails</span> target, consider rebalancing to capture upside within constraints.
+            </div>
+          </div>
+          <div>
+            <div className="mc-insight-section-title">R&D</div>
+            <div className="mc-insight-text">
+              Compare allocation vs target to gauge whether innovation spend aligns with expected efficiency. High volatility suggests staged increases rather than step changes.
+            </div>
+          </div>
+          <div>
+            <div className="mc-insight-section-title">Ops</div>
+            <div className="mc-insight-text">
+              Operational allocation should track efficiency closely. If efficiency rises while allocation lags, modest increases can improve ROI stability.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header">
+          <div>Strategy Gap Diagram</div>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Blue: Allocation ratio • Grey: Efficiency target • Purple: Gap</div>
+        </div>
+        <div className="chart-container mc-chart" style={{ height: 380 }}>
+          <ResponsiveContainer>
+            <ComposedChart data={gapData} layout="vertical" margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
+              <XAxis type="number" domain={[0, 120]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <YAxis type="category" dataKey="dept" />
+              <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
+              <Legend />
+              <Bar dataKey="target" fill="#e5edf8" barSize={24} />
+              <Bar dataKey="ratio" fill={MCTheme.colors.line} barSize={24}>
+                <LabelList dataKey="ratio" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="insideRight" fill="#ffffff" />
+              </Bar>
+              {gapData.map((d, i) => (
+                <ReferenceDot key={i} x={d.target} y={d.dept} r={9} fill="#a21caf" stroke="none" label={{ value: String(Math.round(d.gap)), position: "right" }} />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="mc-hero-insight">
+        {(() => {
+          const maxGap = gapData.reduce((acc, d) => (d.gap > acc.gap ? d : acc), gapData[0]);
+          const avgGap = gapData.reduce((a, d) => a + d.gap, 0) / (gapData.length || 1);
+          return (
+            <>
+              <div className="mc-insight-header">
+                <div>
+                  <div className="mc-insight-title">Strategy Gap Explanation</div>
+                  <div className="mc-insight-sub">Why we visualize allocation vs efficiency</div>
+                </div>
+                <div className="mc-insight-value">
+                  <div className="label">AVERAGE GAP</div>
+                  <div className="num">{avgGap.toFixed(1)}%</div>
+                </div>
+              </div>
+              <div className="mc-insight-divider" />
+              <div className="mc-insight-grid">
+                <div>
+                  <div className="mc-insight-section-title">Purpose</div>
+                  <div className="mc-insight-text">
+                    The diagram highlights misalignment between current allocation (<span className="mc-strong">blue</span>) and risk‑adjusted efficiency targets (<span className="mc-strong">grey</span>). Purple markers quantify the <span className="mc-strong">gap</span>, guiding rebalancing decisions within constraints.
+                  </div>
+                </div>
+                <div>
+                  <div className="mc-insight-section-title">How to Use</div>
+                  <div className="mc-insight-text">
+                    If the gap exceeds the average or a chosen threshold, consider increasing allocation toward the target for that department. Largest current gap: <span className="mc-strong">{maxGap.dept}</span> at <span className="mc-strong">{Math.round(maxGap.gap)}%</span>. Where allocation is above target, hold or reduce to maintain ROI stability.
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
+      </div>
+      <div className="card">
+        <div className="card-header">
+          <div>ROI Trend</div>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Latest quarters</div>
+        </div>
+        <div className="chart-container mc-chart">
+          <ResponsiveContainer>
+            <LineChart data={roiTrend} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
+              <XAxis dataKey="period" />
+              <YAxis tickFormatter={(v) => `${v.toFixed(0)}%`} />
+              <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
+              <Legend />
+              <Line type="monotone" dataKey="ROI" stroke={MCTheme.colors.line} strokeWidth={3} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
       <div className="card">
