@@ -1,0 +1,56 @@
+export interface ProjectInput {
+  id: string;
+  expected_return: number;
+  cost: number;
+  risk: number;
+}
+
+export interface OptimizationRequest {
+  periods: number;
+  budgets: number[];
+  projects: ProjectInput[];
+  risk_aversion: number;
+}
+
+export interface OptimizationResponse {
+  policy: any[];
+  value: number;
+}
+
+export interface SimulationRequest {
+  periods: number;
+  budgets: number[];
+  num_simulations: number;
+  mean_profit: number;
+  profit_std: number;
+  var_confidence?: number;
+}
+
+export interface SimulationResponse {
+  expected_profit: number;
+  variance: number;
+  metrics: Record<string, number>;
+}
+
+export interface EvaluationRequest {
+  expected_profit: number;
+  variance: number;
+  risk_aversion: number;
+}
+
+export interface EvaluationResponse {
+  score: number;
+}
+
+export interface BatchItem {
+  period_label: string;
+  expected_profit: number;
+  variance: number;
+  metrics: Record<string, number>;
+  policy: any[];
+  value: number;
+}
+
+export interface BatchUploadResponse {
+  items: BatchItem[];
+}

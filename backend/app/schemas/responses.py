@@ -1,0 +1,25 @@
+from pydantic import BaseModel
+from typing import Any, List, Dict
+
+class OptimizationResponse(BaseModel):
+    policy: List[Any]
+    value: float
+
+class SimulationResponse(BaseModel):
+    expected_profit: float
+    variance: float
+    metrics: Dict[str, float]
+
+class EvaluationResponse(BaseModel):
+    score: float
+
+class BatchItem(BaseModel):
+    period_label: str
+    expected_profit: float
+    variance: float
+    metrics: Dict[str, float]
+    policy: List[Any]
+    value: float
+
+class BatchUploadResponse(BaseModel):
+    items: List[BatchItem]
