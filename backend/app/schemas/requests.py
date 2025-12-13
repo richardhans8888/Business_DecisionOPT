@@ -26,3 +26,11 @@ class EvaluationRequest(BaseModel):
     variance: float
     risk_aversion: float
 
+class BestChoiceRequest(BaseModel):
+    Marketing_Revenue: float
+    RnD_Revenue: float
+    Ops_Revenue: float
+    Marketing_Spend: float
+    RnD_Spend: float
+    Ops_Spend: float
+    Budget: float

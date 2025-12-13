@@ -1,7 +1,7 @@
 from typing import Dict, List, Iterable
-from .simulation_service import run_simulation
-from .optimizer_service import run_optimization
-from ..schemas.requests import SimulationRequest, OptimizationRequest, ProjectInput
+from ..algorithms.monte_carlo.predictor import monte_carlo
+from ..algorithms.dynamic_programming.best_choice import dp_best_choice
+import statistics
 
 def _normalize_key(k: str) -> str:
     return k.strip().lower().replace(" ", "_")
@@ -34,32 +34,31 @@ def process_csv(reader: Iterable[Dict]) -> List[Dict]:
         ops_spend = _get(row, "ops_spend", 0.0)
         budget = _get(row, "budget", 0.0)
 
-        mean_profit = marketing_revenue + rnd_revenue + ops_revenue - (marketing_spend + rnd_spend + ops_spend)
-        sim_req = SimulationRequest(
-            periods=1,
-            budgets=[budget],
-            num_simulations=1000,
-            mean_profit=mean_profit,
-            profit_std=0.1 * max(1.0, marketing_revenue + rnd_revenue + ops_revenue),
-            var_confidence=0.95,
-        )
-        sim_res = run_simulation(sim_req)
+        row = {
+            "Marketing_Revenue": marketing_revenue,
+            "RnD_Revenue": rnd_revenue,
+            "Ops_Revenue": ops_revenue,
+            "Marketing_Spend": marketing_spend,
+            "RnD_Spend": rnd_spend,
+            "Ops_Spend": ops_spend,
+            "Budget": budget,
+        }
+        mc = monte_carlo(row, iterations=1000)
+        alloc_pct, best_score = dp_best_choice(mc)
 
-        projects = [
-            ProjectInput(id="marketing", expected_return=marketing_revenue, cost=marketing_spend, risk=0.2),
-            ProjectInput(id="rnd", expected_return=rnd_revenue, cost=rnd_spend, risk=0.3),
-            ProjectInput(id="ops", expected_return=ops_revenue, cost=ops_spend, risk=0.25),
+        combined = [
+            (mc["raw_data"]["Marketing"][i] + mc["raw_data"]["RnD"][i] + mc["raw_data"]["Ops"][i])
+            for i in range(len(mc["raw_data"]["Marketing"]))
         ]
-        opt_req = OptimizationRequest(periods=1, budgets=[budget], projects=projects, risk_aversion=0.5)
-        opt_res = run_optimization(opt_req)
+        expected_profit = sum(combined) / len(combined) if combined else 0.0
+        variance = statistics.pvariance(combined) if len(combined) > 1 else 0.0
 
         items.append({
             "period_label": f"{year} {quarter}",
-            "expected_profit": sim_res["expected_profit"],
-            "variance": sim_res["variance"],
-            "metrics": sim_res.get("metrics", {}),
-            "policy": opt_res["policy"],
-            "value": opt_res["value"],
+            "expected_profit": expected_profit,
+            "variance": variance,
+            "metrics": {},
+            "policy": [alloc_pct[0], alloc_pct[1], alloc_pct[2]],
+            "value": float(best_score),
         })
     return items
-

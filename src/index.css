@@ -136,6 +136,67 @@ body {
   height: 360px;
 }
 
+.report-card {
+  max-width: 1000px;
+  margin: 0 auto 24px;
+  background: #0f1f49;
+  color: #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  box-shadow: 0 18px 34px rgba(15, 31, 73, 0.35);
+  padding: 20px;
+}
+.report-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.report-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.report-sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.report-value {
+  text-align: right;
+}
+.report-value .label {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.report-value .num {
+  font-size: 22px;
+  font-weight: 800;
+  color: #22c55e;
+}
+.report-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.15);
+  margin: 12px 0 16px;
+}
+.report-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.report-col-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a78bfa;
+  margin-bottom: 8px;
+}
+.report-text {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.report-strong {
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;

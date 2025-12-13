@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { runSimulation } from "../api/simulation";
-import { runOptimization } from "../api/optimization";
-import type { OptimizationRequest, SimulationRequest } from "../types/api";
+import { bestChoice } from "../api/optimization";
+import type { BestChoiceRequest } from "../types/api";
 import { uploadCSV } from "../api/ingestion";
 import type { BatchUploadResponse } from "../types/api";
 import { useAppState } from "../store/AppState";
@@ -27,34 +26,20 @@ export default function InputData({
     setLoading(true);
     setError("");
     try {
-      const periods = 1;
-      const budgets = [budget];
-      const simReq: SimulationRequest = {
-        periods,
-        budgets,
-        num_simulations: 500,
-        mean_profit: marketingRevenue + rndRevenue + opsRevenue - (marketingSpend + rndSpend + opsSpend),
-        profit_std: 0.1 * Math.max(1, marketingRevenue + rndRevenue + opsRevenue),
-        var_confidence: 0.95,
+      const req: BestChoiceRequest = {
+        Marketing_Revenue: marketingRevenue,
+        RnD_Revenue: rndRevenue,
+        Ops_Revenue: opsRevenue,
+        Marketing_Spend: marketingSpend,
+        RnD_Spend: rndSpend,
+        Ops_Spend: opsSpend,
+        Budget: budget,
       };
-      const sim = await runSimulation(simReq);
-
-      const optReq: OptimizationRequest = {
-        periods,
-        budgets,
-        projects: [
-          { id: "marketing", expected_return: marketingRevenue, cost: marketingSpend, risk: 0.2 },
-          { id: "rnd", expected_return: rndRevenue, cost: rndSpend, risk: 0.3 },
-          { id: "ops", expected_return: opsRevenue, cost: opsSpend, risk: 0.25 },
-        ],
-        risk_aversion: riskAversion,
-      };
-      const opt = await runOptimization(optReq);
-
+      const opt = await bestChoice(req);
       onResult({
         periodLabel: `${year} ${quarter}`,
-        expected_profit: sim.expected_profit,
-        variance: sim.variance,
+        expected_profit: opt.expected_profit,
+        variance: opt.variance,
         policy: opt.policy,
         value: opt.value,
       });

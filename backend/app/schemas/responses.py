@@ -23,3 +23,9 @@ class BatchItem(BaseModel):
 
 class BatchUploadResponse(BaseModel):
     items: List[BatchItem]
+
+class BestChoiceResponse(BaseModel):
+    policy: List[float]
+    value: float
+    expected_profit: float
+    variance: float

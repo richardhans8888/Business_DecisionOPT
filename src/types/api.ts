@@ -54,3 +54,20 @@ export interface BatchItem {
 export interface BatchUploadResponse {
   items: BatchItem[];
 }
+
+export interface BestChoiceRequest {
+  Marketing_Revenue: number;
+  RnD_Revenue: number;
+  Ops_Revenue: number;
+  Marketing_Spend: number;
+  RnD_Spend: number;
+  Ops_Spend: number;
+  Budget: number;
+}
+
+export interface BestChoiceResponse {
+  policy: number[];
+  value: number;
+  expected_profit: number;
+  variance: number;
+}
