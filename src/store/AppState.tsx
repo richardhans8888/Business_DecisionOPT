@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { BatchItem } from "../types/api";
-import type { HistoryItem } from "../views/CompareQuarters";
+import type { HistoryItem } from "../views/CompareQuartersCharts";
 
 type FormState = {
   year: number;
@@ -92,4 +92,3 @@ export function useAppState(): AppState {
   if (!ctx) throw new Error("AppStateProvider missing");
   return ctx;
 }
-

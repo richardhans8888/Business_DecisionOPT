@@ -20,6 +20,7 @@ class BatchItem(BaseModel):
     metrics: Dict[str, float]
     policy: List[Any]
     value: float
+    explain: Dict[str, Any] | None = None
 
 class BatchUploadResponse(BaseModel):
     items: List[BatchItem]
@@ -29,3 +30,4 @@ class BestChoiceResponse(BaseModel):
     value: float
     expected_profit: float
     variance: float
+    explain: Dict[str, Any] | None = None

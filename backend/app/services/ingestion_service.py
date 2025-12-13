@@ -50,15 +50,28 @@ def process_csv(reader: Iterable[Dict]) -> List[Dict]:
             (mc["raw_data"]["Marketing"][i] + mc["raw_data"]["RnD"][i] + mc["raw_data"]["Ops"][i])
             for i in range(len(mc["raw_data"]["Marketing"]))
         ]
-        expected_profit = sum(combined) / len(combined) if combined else 0.0
+        avg_revenue = sum(combined) / len(combined) if combined else 0.0
+        total_spend = marketing_spend + rnd_spend + ops_spend
+        expected_profit = avg_revenue - total_spend
         variance = statistics.pvariance(combined) if len(combined) > 1 else 0.0
 
+        explain = {
+            "expected": mc.get("expected", {}),
+            "risk": mc.get("risk", {}),
+            "risk_weight": 0.3,
+            "allocation_pct": {"marketing": alloc_pct[0], "rnd": alloc_pct[1], "ops": alloc_pct[2]},
+            "budget": budget,
+            "avg_revenue": avg_revenue,
+            "total_spend": total_spend,
+            "net_profit": expected_profit,
+        }
         items.append({
             "period_label": f"{year} {quarter}",
             "expected_profit": expected_profit,
             "variance": variance,
             "metrics": {},
-            "policy": [alloc_pct[0], alloc_pct[1], alloc_pct[2]],
+            "policy": [budget * alloc_pct[0] / 100.0, budget * alloc_pct[1] / 100.0, budget * alloc_pct[2] / 100.0],
             "value": float(best_score),
+            "explain": explain,
         })
     return items

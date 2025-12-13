@@ -49,6 +49,7 @@ export interface BatchItem {
   metrics: Record<string, number>;
   policy: any[];
   value: number;
+  explain?: Record<string, any>;
 }
 
 export interface BatchUploadResponse {
@@ -70,4 +71,5 @@ export interface BestChoiceResponse {
   value: number;
   expected_profit: number;
   variance: number;
+  explain?: Record<string, any>;
 }

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import InputData from "../views/InputData";
-import CompareQuarters from "../views/CompareQuarters";
 import CompareQuartersCharts from "../views/CompareQuartersCharts";
-import type { HistoryItem } from "../views/CompareQuarters";
+import Analysis from "../views/Analysis";
+import Strategy from "../views/Strategy";
+import Visuals from "../views/Visuals";
+import type { HistoryItem } from "../views/CompareQuartersCharts";
 import { useAppState } from "../store/AppState";
 
 type View =
@@ -28,8 +30,11 @@ export default function Layout() {
       <Sidebar current={view} onSelect={setView} />
       <div className="content">
         {view === "Input Data" && <InputData onResult={addResult} />}
+        {view === "Analysis" && <Analysis />}
+        {view === "Strategy" && <Strategy />}
+        {view === "Visuals" && <Visuals />}
         {view === "Compare Quarters" && <CompareQuartersCharts history={history} />}
-        {view !== "Input Data" && view !== "Compare Quarters" && (
+        {view !== "Input Data" && view !== "Compare Quarters" && view !== "Analysis" && view !== "Strategy" && view !== "Visuals" && (
           <div className="page">Coming soon</div>
         )}
       </div>
