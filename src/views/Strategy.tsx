@@ -30,16 +30,16 @@ export default function Strategy() {
     return { period: h.periodLabel, ROI: (rev / b) * 100 };
   });
   const mkPanel = [
-    { name: "Allocation", val: pct[0] || 0, color: MCTheme.colors.marketing },
-    { name: "Efficiency", val: efficiencyScale(eff.Marketing), color: "#cfe3ff" },
+    { name: "Allocation", allocation: pct[0] || 0, efficiency: 0 },
+    { name: "Efficiency", allocation: 0, efficiency: efficiencyScale(eff.Marketing) },
   ];
   const rdPanel = [
-    { name: "Allocation", val: pct[1] || 0, color: MCTheme.colors.rnd },
-    { name: "Efficiency", val: efficiencyScale(eff.RnD), color: "#cfe3ff" },
+    { name: "Allocation", allocation: pct[1] || 0, efficiency: 0 },
+    { name: "Efficiency", allocation: 0, efficiency: efficiencyScale(eff.RnD) },
   ];
   const opPanel = [
-    { name: "Allocation", val: pct[2] || 0, color: MCTheme.colors.ops },
-    { name: "Efficiency", val: efficiencyScale(eff.Ops), color: "#cfe3ff" },
+    { name: "Allocation", allocation: pct[2] || 0, efficiency: 0 },
+    { name: "Efficiency", allocation: 0, efficiency: efficiencyScale(eff.Ops) },
   ];
   const gapData = [
     { dept: "Marketing", ratio: pct[0] || 0, target: efficiencyScale(eff.Marketing), gap: Math.max(0, efficiencyScale(eff.Marketing) - (pct[0] || 0)) },
@@ -91,11 +91,12 @@ export default function Strategy() {
                 <YAxis domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                 <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
                 <Legend />
-                {mkPanel.map((e, idx) => (
-                  <Bar key={idx} dataKey="val" fill={e.color} isAnimationActive>
-                    <LabelList dataKey="val" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
-                  </Bar>
-                ))}
+                <Bar dataKey="allocation" name="Allocation" fill={MCTheme.colors.marketing} isAnimationActive>
+                  <LabelList dataKey="allocation" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                </Bar>
+                <Bar dataKey="efficiency" name="Efficiency" fill="#cfe3ff" isAnimationActive>
+                  <LabelList dataKey="efficiency" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -113,11 +114,12 @@ export default function Strategy() {
                 <YAxis domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                 <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
                 <Legend />
-                {rdPanel.map((e, idx) => (
-                  <Bar key={idx} dataKey="val" fill={e.color} isAnimationActive>
-                    <LabelList dataKey="val" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
-                  </Bar>
-                ))}
+                <Bar dataKey="allocation" name="Allocation" fill={MCTheme.colors.rnd} isAnimationActive>
+                  <LabelList dataKey="allocation" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                </Bar>
+                <Bar dataKey="efficiency" name="Efficiency" fill="#cfe3ff" isAnimationActive>
+                  <LabelList dataKey="efficiency" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -135,11 +137,12 @@ export default function Strategy() {
                 <YAxis domain={[0, 100]} tickFormatter={(v) => `${v.toFixed(0)}%`} />
                 <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
                 <Legend />
-                {opPanel.map((e, idx) => (
-                  <Bar key={idx} dataKey="val" fill={e.color} isAnimationActive>
-                    <LabelList dataKey="val" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
-                  </Bar>
-                ))}
+                <Bar dataKey="allocation" name="Allocation" fill={MCTheme.colors.ops} isAnimationActive>
+                  <LabelList dataKey="allocation" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                </Bar>
+                <Bar dataKey="efficiency" name="Efficiency" fill="#cfe3ff" isAnimationActive>
+                  <LabelList dataKey="efficiency" formatter={(v: any) => `${Number(v).toFixed(0)}%`} position="top" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

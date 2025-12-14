@@ -4,11 +4,19 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { MCTheme } from "../theme/chartTheme";
 
 function idrTick(v: number) {
-  const b = v / 1_000_000_000;
-  if (b >= 1) return `${b.toFixed(1)} Miliar`;
-  const k = v / 1_000;
-  if (k >= 1) return `${k.toFixed(0)} Ribu`;
+  const sign = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  const b = abs / 1_000_000_000;
+  if (b >= 1) return `${sign}${b.toFixed(1)} Miliar`;
+  const k = abs / 1_000;
+  if (k >= 1) return `${sign}${k.toFixed(0)} Ribu`;
   return `Rp ${v.toFixed(0)}`;
+}
+function idrBil(v: number) {
+  const sign = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  if (abs < 1_000_000) return `0.0 Miliar`;
+  return `${sign}${(abs / 1_000_000_000).toFixed(1)} Miliar`;
 }
 
 export default function Visuals() {
@@ -64,10 +72,10 @@ export default function Visuals() {
     return { period: h.periodLabel, ROI: (rev / b) * 100 };
   });
   const netProfit = history.map((h) => ({ period: h.periodLabel, Net: Number(h.expected_profit || 0) }));
-  const cumNet = (() => {
+  const cumRev = (() => {
     let run = 0;
     return history.map((h) => {
-      run += Number(h.expected_profit || 0);
+      run += Number(h.explain?.avg_revenue || 0);
       return { period: h.periodLabel, Cumulative: run };
     });
   })();
@@ -112,10 +120,14 @@ export default function Visuals() {
     const max = Math.max(...values, 1);
     const bins = 10;
     const step = (max - min) / bins || 1;
-    const counts = Array.from({ length: bins }, (_, i) => ({
-      bin: `${(min + i * step).toFixed(1)}`,
-      count: values.filter((v) => v >= min + i * step && v < min + (i + 1) * step).length,
-    }));
+    const counts = Array.from({ length: bins }, (_, i) => {
+      const edge = min + i * step;
+      const next = min + (i + 1) * step;
+      return {
+        bin: edge,
+        count: values.filter((v) => v >= edge && v < next).length,
+      };
+    });
     return counts;
   })();
 
@@ -170,8 +182,8 @@ export default function Visuals() {
             <ComposedChart data={bandData} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
               <XAxis dataKey="period" />
-              <YAxis tickFormatter={idrTick} />
-              <Tooltip formatter={(v: any) => idrTick(Number(v))} />
+              <YAxis tickFormatter={idrBil} />
+              <Tooltip formatter={(v: any) => idrBil(Number(v))} />
               <Legend />
               <Line type="monotone" dataKey="Expected" stroke={MCTheme.colors.line} strokeWidth={3} dot={false} />
               <Line type="monotone" dataKey="Upper" stroke={MCTheme.colors.lineAlt} strokeDasharray="6 6" dot={false} />
@@ -189,9 +201,9 @@ export default function Visuals() {
           <ResponsiveContainer>
             <ScatterChart margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
-              <XAxis dataKey="Risk" tickFormatter={idrTick} name="Risk" />
+              <XAxis dataKey="Risk" tickFormatter={idrBil} name="Risk" />
               <YAxis dataKey="ROI" tickFormatter={(v) => `${Number(v).toFixed(0)}%`} name="ROI (%)" />
-              <Tooltip formatter={(v: any, n: any) => n === "ROI" ? `${Number(v).toFixed(1)}%` : idrTick(Number(v))} />
+              <Tooltip formatter={(v: any, n: any) => n === "ROI" ? `${Number(v).toFixed(1)}%` : idrBil(Number(v))} />
               <Legend />
               <Scatter name="Quarters" data={scatterRoiRisk} fill={MCTheme.colors.line} />
             </ScatterChart>
@@ -209,11 +221,11 @@ export default function Visuals() {
               <BarChart data={netProfit} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
                 <XAxis dataKey="period" />
-                <YAxis tickFormatter={idrTick} />
-                <Tooltip formatter={(v: any) => idrTick(Number(v))} />
+                <YAxis tickFormatter={idrBil} />
+                <Tooltip formatter={(v: any) => idrBil(Number(v))} />
                 <Legend />
                 <Bar dataKey="Net" fill={MCTheme.colors.line}>
-                  <LabelList dataKey="Net" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="top" />
+                  <LabelList dataKey="Net" formatter={(v: any) => (Number(v)/1_000_000_000).toFixed(1)} position="top" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -221,16 +233,16 @@ export default function Visuals() {
         </div>
         <div className="card">
           <div className="card-header">
-            <div>Cumulative Net Profit</div>
+            <div>Cumulative Revenue</div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Running total</div>
           </div>
           <div className="chart-container mc-chart">
             <ResponsiveContainer>
-              <AreaChart data={cumNet} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+              <AreaChart data={cumRev} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
                 <XAxis dataKey="period" />
-                <YAxis tickFormatter={idrTick} />
-                <Tooltip formatter={(v: any) => idrTick(Number(v))} />
+                <YAxis tickFormatter={idrBil} />
+                <Tooltip formatter={(v: any) => idrBil(Number(v))} />
                 <Legend />
                 <Area dataKey="Cumulative" stroke={MCTheme.colors.lineAlt} fill="#cfe3ff" />
               </AreaChart>
@@ -314,8 +326,8 @@ export default function Visuals() {
               <BarChart data={latestDeptNet} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
                 <XAxis dataKey="dept" />
-                <YAxis tickFormatter={idrTick} />
-                <Tooltip formatter={(v: any) => idrTick(Number(v))} />
+                <YAxis tickFormatter={idrBil} />
+                <Tooltip formatter={(v: any) => idrBil(Number(v))} />
                 <Legend />
                 <Bar dataKey="Net" fill={MCTheme.colors.line} />
               </BarChart>
@@ -331,9 +343,12 @@ export default function Visuals() {
             <ResponsiveContainer>
               <BarChart data={histBins} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
-                <XAxis dataKey="bin" />
+                <XAxis dataKey="bin" tickFormatter={(v: number) => idrBil(Number(v))} />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  formatter={(v: any, n: any) => (n === "count" ? Number(v) : idrBil(Number(v)))}
+                  labelFormatter={(label: any) => idrBil(Number(label))}
+                />
                 <Legend />
                 <Bar dataKey="count" fill={MCTheme.colors.line} />
               </BarChart>

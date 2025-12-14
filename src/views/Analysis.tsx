@@ -6,12 +6,10 @@ import { MCTheme } from "../theme/chartTheme";
 function toMil(v: number) {
   return `${(v / 1_000_000_000).toFixed(1)} Miliar`;
 }
-function idrTick(v: number) {
-  const b = v / 1_000_000_000;
-  if (b >= 1) return `${b.toFixed(1)} Miliar`;
-  const k = v / 1_000;
-  if (k >= 1) return `${k.toFixed(0)} Ribu`;
-  return `Rp ${v.toFixed(0)}`;
+function idrBil(v: number) {
+  const sign = v < 0 ? "-" : "";
+  const abs = Math.abs(v);
+  return `${sign}${(abs / 1_000_000_000).toFixed(1)} Miliar`;
 }
 
 export default function Analysis() {
@@ -94,8 +92,8 @@ export default function Analysis() {
               <BarChart data={barData} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
                 <XAxis dataKey="dept" />
-                <YAxis tickFormatter={idrTick} />
-                <Tooltip formatter={(value: any) => idrTick(Number(value))} />
+                <YAxis tickFormatter={idrBil} />
+                <Tooltip formatter={(value: any) => idrBil(Number(value))} />
                 <Legend />
                 <Bar dataKey="Expected" fill={MCTheme.colors.line} />
                 <Bar dataKey="Risk" fill={MCTheme.colors.axis} />
@@ -127,26 +125,26 @@ export default function Analysis() {
         </div>
         <div className="chart-container mc-chart" style={{ height: 440 }}>
           <ResponsiveContainer>
-            <BarChart data={compData} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
-              <XAxis dataKey="period" />
-              <YAxis tickFormatter={idrTick} />
-              <Tooltip formatter={(v: any) => idrTick(Number(v))} />
-              <Legend />
-              <Bar dataKey="Marketing" stackId="s" fill={MCTheme.colors.marketing} isAnimationActive>
-                <LabelList dataKey="Marketing" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="insideTop" fill="#ffffff" />
-              </Bar>
-              <Bar dataKey="RnD" stackId="s" fill={MCTheme.colors.rnd} isAnimationActive>
-                <LabelList dataKey="RnD" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="insideTop" fill="#ffffff" />
-              </Bar>
-              <Bar dataKey="Ops" stackId="s" fill={MCTheme.colors.ops} isAnimationActive>
-                <LabelList dataKey="Ops" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="insideTop" fill="#ffffff" />
-              </Bar>
-              <Line type="monotone" dataKey="total" stroke={MCTheme.colors.lineAlt} strokeDasharray="6 6" dot={false} />
-            </BarChart>
-          </ResponsiveContainer>
+              <BarChart data={compData} margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
+                <XAxis dataKey="period" />
+                <YAxis tickFormatter={idrBil} />
+                <Tooltip formatter={(v: any) => idrBil(Number(v))} />
+                <Legend />
+                <Bar dataKey="Marketing" stackId="s" fill={MCTheme.colors.marketing} isAnimationActive>
+                  <LabelList dataKey="Marketing" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="insideTop" fill="#ffffff" />
+                </Bar>
+                <Bar dataKey="RnD" stackId="s" fill={MCTheme.colors.rnd} isAnimationActive>
+                  <LabelList dataKey="RnD" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="insideTop" fill="#ffffff" />
+                </Bar>
+                <Bar dataKey="Ops" stackId="s" fill={MCTheme.colors.ops} isAnimationActive>
+                  <LabelList dataKey="Ops" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="insideTop" fill="#ffffff" />
+                </Bar>
+                <Line type="monotone" dataKey="total" stroke={MCTheme.colors.lineAlt} strokeDasharray="6 6" dot={false} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
       <div className="mc-insight-card">
         {(() => {
           const q = history.length;
@@ -246,8 +244,8 @@ export default function Analysis() {
                     <BarChart data={d} margin={{ top: 16, right: 16, left: 16, bottom: 16 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke={MCTheme.colors.grid} />
                       <XAxis dataKey="name" />
-                      <YAxis tickFormatter={idrTick} />
-                      <Tooltip formatter={(v: any) => idrTick(Number(v))} />
+                      <YAxis tickFormatter={idrBil} />
+                      <Tooltip formatter={(v: any) => idrBil(Number(v))} />
                       {d.map((e, idx) => (
                         <Bar key={idx} dataKey="val" fill={[MCTheme.colors.marketing, MCTheme.colors.ops, MCTheme.colors.rnd][idx]} isAnimationActive>
                           <LabelList dataKey="val" formatter={(v: any) => (v/1_000_000_000).toFixed(1)} position="top" />

@@ -4,6 +4,7 @@ import type { BestChoiceRequest } from "../types/api";
 import { uploadCSV } from "../api/ingestion";
 import type { BatchUploadResponse } from "../types/api";
 import { useAppState } from "../store/AppState";
+import { parseCsvFile, parseCsvText, type CanonicalRow } from "../utils/parseCsv";
 
 export default function InputData({
   onResult,
@@ -25,25 +26,77 @@ export default function InputData({
   const [rows, setRows] = useState<Array<Record<string, string | number>>>([]);
   const headers = useMemo(() => ["year","quarter","marketing_revenue","marketing_spend","rnd_revenue","rnd_spend","ops_revenue","ops_spend","budget"], []);
 
+  function normalizeHeader(h: string) {
+    return h
+      .toLowerCase()
+      .replace(/\(.*?\)/g, "")
+      .replace(/&/g, "nd")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+  function canonicalKey(h: string) {
+    const n = normalizeHeader(h);
+    const map: Record<string, string> = {
+      quarter: "quarter",
+      q: "quarter",
+      qtr: "quarter",
+      year: "year",
+      budget: "budget",
+      budget_idr: "budget",
+      total_budget: "budget",
+      marketing_spend: "marketing_spend",
+      marketing_cost: "marketing_spend",
+      marketing_expense: "marketing_spend",
+      rnd_spend: "rnd_spend",
+      rnd_cost: "rnd_spend",
+      rnd_expense: "rnd_spend",
+      rnd_nd_spend: "rnd_spend",
+      rnd: "rnd_spend",
+      rnd_revenue: "rnd_revenue",
+      rnd_rev: "rnd_revenue",
+      rnd_income: "rnd_revenue",
+      rnd_sales: "rnd_revenue",
+      rdn_revenue: "rnd_revenue",
+      rnd_nd_revenue: "rnd_revenue",
+      marketing_revenue: "marketing_revenue",
+      marketing_rev: "marketing_revenue",
+      marketing_income: "marketing_revenue",
+      marketing_sales: "marketing_revenue",
+      ops_spend: "ops_spend",
+      operations_spend: "ops_spend",
+      ops_revenue: "ops_revenue",
+      ops_rev: "ops_revenue",
+      operations_revenue: "ops_revenue",
+    };
+    return map[n] ?? n;
+  }
+  function parseIDR(v: any) {
+    const s = String(v ?? "").trim();
+    const cleaned = s.replace(/[^\d.-]/g, "");
+    if (!cleaned) return 0;
+    const n = parseFloat(cleaned);
+    return isFinite(n) ? n : 0;
+  }
+  function toQuarter(v: any) {
+    const s = String(v ?? "").trim().toUpperCase();
+    if (/^Q[1-4]$/.test(s)) return s;
+    const num = parseInt(s || "1");
+    const q = Math.min(4, Math.max(1, isFinite(num) ? num : 1));
+    return `Q${q}`;
+  }
+
   useEffect(() => {
     if (!csvText) {
       setRows([]);
       return;
     }
-    const lines = String(csvText).split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length < 2) {
+    const parsed = parseCsvText(String(csvText));
+    if (parsed.missing.length) {
+      setError(`Missing required columns: ${parsed.missing.join(", ")}. Detected headers: ${parsed.headers.join(", ")}`);
       setRows([]);
       return;
     }
-    const hdr = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-    const out: Array<Record<string,string|number>> = [];
-    for (let i=1;i<lines.length;i++) {
-      const cols = lines[i].split(",");
-      const r: Record<string,string|number> = {};
-      hdr.forEach((h, idx) => r[h] = (cols[idx] ?? "").trim());
-      out.push(r);
-    }
-    setRows(out);
+    setRows(parsed.rows as any);
   }, [csvText]);
 
   function serializeRows(rws: Array<Record<string,string|number>>) {
@@ -112,38 +165,73 @@ export default function InputData({
               setError("");
               try {
                 const text = await file.text();
-                const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-                if (lines.length > 1) {
-                  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-                  const first = lines[1].split(",");
-                  const asRecord: Record<string, string> = {};
-                  headers.forEach((h, i) => (asRecord[h] = (first[i] ?? "").trim()));
-                  const num = (k: string) => parseFloat(asRecord[k] ?? "0") || 0;
-                  const yearStr = asRecord["year"] ?? "2024";
-                  setForm({
-                    year: parseInt(yearStr || "2024"),
-                    quarter: (asRecord["quarter"] ?? asRecord["qtr"] ?? "Q1").toUpperCase(),
-                    marketingRevenue: num("marketing_revenue"),
-                    marketingSpend: num("marketing_spend"),
-                    rndRevenue: num("rnd_revenue"),
-                    rndSpend: num("rnd_spend"),
-                    opsRevenue: num("ops_revenue"),
-                    opsSpend: num("ops_spend"),
-                    budget: num("budget"),
-                  });
-                  setCsvText(text);
+                const parsed = await parseCsvFile(file);
+                if (parsed.missing.length) {
+                  setError(`Missing required columns: ${parsed.missing.join(", ")}. Detected headers: ${parsed.headers.join(", ")}`);
+                  setUploading(false);
+                  return;
                 }
-                const res: BatchUploadResponse = await uploadCSV(file);
-                res.items.forEach((it) =>
-                  onResult({
-                    periodLabel: it.period_label,
-                    expected_profit: it.expected_profit,
-                    variance: it.variance,
-                    policy: it.policy,
-                    value: it.value,
-                    explain: it.explain,
-                  })
-                );
+                const rowsParsed = parsed.rows;
+                setRows(rowsParsed as any);
+                setCsvText(text);
+                if (rowsParsed.length > 0) {
+                  const r0: CanonicalRow = rowsParsed[0];
+                  setForm({
+                    year: r0.year || 2024,
+                    quarter: r0.quarter || "Q1",
+                    marketingRevenue: r0.marketing_revenue || 0,
+                    marketingSpend: r0.marketing_spend || 0,
+                    rndRevenue: r0.rnd_revenue || 0,
+                    rndSpend: r0.rnd_spend || 0,
+                    opsRevenue: r0.ops_revenue || 0,
+                    opsSpend: r0.ops_spend || 0,
+                    budget: r0.budget || 0,
+                  });
+                }
+                try {
+                  const res: BatchUploadResponse = await uploadCSV(file);
+                  res.items.forEach((it) =>
+                    onResult({
+                      periodLabel: it.period_label,
+                      expected_profit: it.expected_profit,
+                      variance: it.variance,
+                      policy: it.policy,
+                      value: it.value,
+                      explain: it.explain,
+                    })
+                  );
+                } catch {
+                  rowsParsed.forEach((r) => {
+                    const totalSpend = (r.marketing_spend || 0) + (r.rnd_spend || 0) + (r.ops_spend || 0);
+                    const avgRevenue = (r.marketing_revenue || 0) + (r.rnd_revenue || 0) + (r.ops_revenue || 0);
+                    const expectedProfit = avgRevenue - totalSpend;
+                    const policy = [r.marketing_spend || 0, r.rnd_spend || 0, r.ops_spend || 0];
+                    const variance = Math.abs(expectedProfit) * 0.1;
+                    onResult({
+                      periodLabel: `${r.year} ${r.quarter}`,
+                      expected_profit: expectedProfit,
+                      variance,
+                      policy,
+                      value: expectedProfit,
+                      explain: {
+                        budget: r.budget || totalSpend,
+                        total_spend: totalSpend,
+                        avg_revenue: avgRevenue,
+                        expected: {
+                          Marketing_Revenue: r.marketing_revenue || 0,
+                          RnD_Revenue: r.rnd_revenue || 0,
+                          Ops_Revenue: r.ops_revenue || 0,
+                        },
+                        risk: {
+                          Marketing_Revenue: (r.marketing_revenue || 0) * 0.15,
+                          RnD_Revenue: (r.rnd_revenue || 0) * 0.15,
+                          Ops_Revenue: (r.ops_revenue || 0) * 0.15,
+                        },
+                      },
+                    });
+                  });
+                  setError("");
+                }
               } catch (err: any) {
                 setError(err?.message || "Upload failed");
               } finally {

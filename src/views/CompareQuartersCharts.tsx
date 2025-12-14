@@ -29,7 +29,7 @@ export default function CompareQuartersCharts({ history }: { history: HistoryIte
       : 0;
     return {
       period: h.periodLabel,
-      growth: h.expected_profit,
+      growth: Number(h.explain?.avg_revenue || 0),
       budget: invested,
     };
   });
@@ -55,10 +55,12 @@ export default function CompareQuartersCharts({ history }: { history: HistoryIte
   }, [history.length]); // re-run when dataset changes
 
   function currencyTick(v: number) {
-    const billion = v / 1_000_000_000;
-    if (billion >= 1) return `${billion.toFixed(1)} Miliar`;
-    const thousand = v / 1_000;
-    if (thousand >= 1) return `${thousand.toFixed(0)} Ribu`;
+    const sign = v < 0 ? "-" : "";
+    const abs = Math.abs(v);
+    const billion = abs / 1_000_000_000;
+    if (billion >= 1) return `${sign}${billion.toFixed(1)} Miliar`;
+    const thousand = abs / 1_000;
+    if (thousand >= 1) return `${sign}${thousand.toFixed(0)} Ribu`;
     return `Rp ${v.toFixed(0)}`;
   }
 
@@ -66,7 +68,11 @@ export default function CompareQuartersCharts({ history }: { history: HistoryIte
     1,
     ...series.map((s) => Math.max(Number(s.growth) || 0, Number(s.budget) || 0))
   );
-  const yDomain: [number, number] = [0, maxVal * 1.25];
+  const minVal = Math.min(
+    0,
+    ...series.map((s) => Math.min(Number(s.growth) || 0, Number(s.budget) || 0))
+  );
+  const yDomain: [number, number] = [minVal * 1.25, maxVal * 1.25];
 
   return (
     <div className="page">
@@ -80,7 +86,7 @@ export default function CompareQuartersCharts({ history }: { history: HistoryIte
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <span style={{ width: 16, height: 6, background: "#22c55e", borderRadius: 999 }} />
-              <span style={{ fontSize: 12, color: "#6b7280" }}>Expected Growth (Revenue)</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Expected Revenue (Avg)</span>
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <span style={{ width: 16, height: 6, background: "#9ca3af", borderRadius: 999 }} />

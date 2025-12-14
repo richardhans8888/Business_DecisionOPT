@@ -45,9 +45,12 @@ export default function CompareQuarters({ history }: { history: HistoryItem[] })
     };
   });
 
+  function toMil(v: number) {
+    return `${(v / 1_000_000_000).toFixed(1)} Miliar`;
+  }
   function currencyTick(v: number) {
-    const mil = v / 1_000_000;
-    if (mil >= 1) return `${mil.toFixed(1)} Miliar`;
+    const b = v / 1_000_000_000;
+    if (b >= 1) return `${b.toFixed(1)} Miliar`;
     const k = v / 1_000;
     if (k >= 1) return `${k.toFixed(0)} Ribu`;
     return `Rp ${v.toFixed(0)}`;
@@ -131,7 +134,7 @@ export default function CompareQuarters({ history }: { history: HistoryItem[] })
             {history.map((h) => (
               <tr key={h.periodLabel}>
                 <td style={{ padding: 8 }}>{h.periodLabel}</td>
-                <td style={{ padding: 8, textAlign: "right" }}>{h.expected_profit.toFixed(2)}</td>
+                <td style={{ padding: 8, textAlign: "right" }}>{toMil(h.expected_profit)}</td>
                 <td style={{ padding: 8, textAlign: "right" }}>{h.variance.toFixed(2)}</td>
                 <td style={{ padding: 8, textAlign: "right" }}>{h.value.toFixed(2)}</td>
               </tr>
